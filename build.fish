@@ -13,7 +13,7 @@ end
 function rebuild
   echo "Had to rebuild"
 	rebuildFile
-	crc32 $actualFile > $crcFile
+	cksum $actualFile > $crcFile
 	if [ $status ]
 		action
 	else
@@ -24,7 +24,7 @@ end
 if [ ! -f $crcFile ]
 	rebuild
 else 
-	if [ (cat $crcFile) != (crc32 $actualFile) ]
+	if [ (cat $crcFile) != (cksum $actualFile) ]
 			rebuild
 	else
 		action
