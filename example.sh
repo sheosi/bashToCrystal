@@ -21,6 +21,7 @@ function Get_Archive_Format() {
    -e "s/.*\.xz$/xz/" \
    -e "s/.*\.zip$/zip/" \
    -e "s/.*\.cpio$/cpio/")
+
    if [ "${format}" == "${file}" ]
    then
       format=$(file --mime --uncompress --brief "${archive}" | sed -r \

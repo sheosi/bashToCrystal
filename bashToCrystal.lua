@@ -23,6 +23,7 @@ Cb = lpeg.Cb
 Cp = lpeg.Cp
 Cc = lpeg.Cc
 Cf = lpeg.Cf
+Ct = lpeg.Ct
 
 locale ={}
 lpeg.locale(locale)   -- adds locale entries into 'lpeg' table
@@ -30,21 +31,76 @@ lpeg.locale(locale)   -- adds locale entries into 'lpeg' table
 space = locale.space
 character = locale.alpha
 
+
 string = (character+'_')^1
 
 --File definition
 ------------------------------------
+function append( table, value)
+	table[#table]=value
+end
+function pair( name,pattern)
+	if type(pattern) == "string" then
+		return Cg(Cc(name)*Cc(pattern))
+	else
+		return Cg(Cc(name)*pattern)
+	end
+end
 
-import = 'Import' * space^1 * C(string)
-string = character^1
-parameters = 'Parameters' * space^1 * '"$@"' * Cg(Cc("parameters") * (' ' * C(string) )^1 )
-assignation = ('local'* space^1)^0 * string
-endline ='\n'
-func = 'function '* Cg(Cc("name") * C(string)) * '() {}'
 
-createTable=Cf(lpeg.Ct("")* func,rawset)
+function valueString( name )
+	return pair(name,C(string) )
+end
+function parse(str)
+	local pairPattern = Cf('['*Ct("")* pair("type","value")*valueString("pattern")*']',rawset)
+	local optSpace = P'_'*Cf(Ct("")*pair("type","optwhitespace"),rawset)
+	local other = Cf(Ct("")*pair("type","constantPattern")*pair("string",C(P'$'+P'=') )
+		
+	--local patternResult = pairPattern:match(str)
+	--if patternResult~=nil then
+		--return valueString(patternResult)
+	--elseif P'_':match(str) then
+		--return space^0
+	--else
+		--return P(str)
+	--end
+	local parsePattern= Ct(pairPattern + optSpace)
+	local result = parsePattern:match(str)
+	if result == nil then
+		return P(str)
+	end
+	if result[1].type == "value" then
+		return valueString(result[1].pattern)
+	elseif result[1].type == "optwhitespace" then
+		return space^0
+	end
+end
+--pattern ("import","Import [import]")
+import = 'Import' * space^1 * valueString("import")
+parameters = 'Parameters' * space^1 * '"$@"' * pair("parameters",  Ct( (' ' * C(string) )^1 ))
+assignation = pair("type","assignation")* pair( "scope", ('local'* space^1)*Cc('local') + Cc('global') )
+ * parse("[left]") * parse('=')
+  * parse('_') *
+parse('$')
+   *parse('_')*'('*space^0*pair("right",C(string^1))* space^0*')'
+--pair("type","assignation")*pair( "scope",  ) * valueString("left") * '=' *space^0 * '$'*space^0*'('*space^0*pair("right",C(string^1))* space^0*')'
+--"[scope]{'local' (local) |(global) }-$[left]_'='_"
+--"Import [import]"
 
-textbuffer = [[function Get_Archive_Format() {}]]
+endline =   P'\n'
+inst = assignation
+func = 'function'* space^1 *pair("type","function") * valueString("name",string) * space^0 * '()'* space^0 *'{' * space^0 * parameters^0 *
+Cg(Cc("instructions")*Ct(""))
+* space^0*'}'
+
+pattern = assignation
+createTable=Cf(lpeg.Ct("")* pattern,rawset)
+
+textbuffer = [[function Get_Archive_Format ()     {
+	   Parameters "$@" archive
+}]]
+textbuffer = [[
+local format=$(Downcase  )]]
 table = createTable:match(textbuffer)
 
 if table == nil then
