@@ -1,6 +1,2 @@
-__pycache__
-*.crc32
-*.tokens
-bash*.py
 bashToCrystal.sublime-project
 bashToCrystal.sublime-workspace
