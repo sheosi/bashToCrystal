@@ -34,6 +34,9 @@ function parseOperator( table )
 			return valueString(table.name)
 		elseif table.valpattype == "lpegPattern" then
 			--Substitute "<" with "parse('" , and ">" with "')"
+			if table.pattern==nil then
+				error("Had an error parsing inline lua")
+			end
 			local subsPattern=lpeg.Cs( ( (P'<'/"parse('") + (P'>'/"')"+1))^0 )
 			table.pattern = subsPattern:match(table.pattern)
 
@@ -100,7 +103,7 @@ end
 -- any other thing: will generate a pattern with that string, symbol, whatever
 --'char': when you need to use anything which is already in the syntax use single quotes. NOTE: single quotes only acceps one character
 function parse(str)
-	local luaChars = (character+space+"^"+'('+')'+"'"+locale.digit+'+'+'<'+'>'+'"'+'*')^1
+	local luaChars = (1- (P'}'+P'{') )^1
 
 	local pairPattern = tablify("value",'[' *valueString("name")*']'*Cg(Cc("valpattype")*(P'{'* Cc"lpegPattern"+ Cc"string") )*pair("pattern",C(luaChars)*'}')^-1)
 	local optSpace    = tablify("optwhitespace",P'_')
