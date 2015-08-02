@@ -8,7 +8,7 @@ require "switch"
 ----------------------------
 P = lpeg.P
 C = lpeg.C
-group = lpeg.Cg
+lpeg.Group = lpeg.Cg
 Cb = lpeg.Cb
 Cp = lpeg.Cp
 lpeg.Constant = lpeg.Cc
@@ -40,7 +40,7 @@ function printResult( table )
 					print(key,": ",value)
 				end
 			else
-				print(key,": ",value)
+				print(key,": ",element)
 			end
 			print("---------------")
 		end
@@ -49,16 +49,16 @@ function printResult( table )
 end
 
 function pair( name,pattern)
-	return group(lpeg.Constant(name) * pattern)
+	return lpeg.Group(lpeg.Constant(name) * pattern)
 end
 
 function quotedString( name )
 	return '\"'*pair(name,C( (1-P'"')^1))*'\"'
 end
 
-function tablePattern( tabletype,pattern )
+function tablePattern( tabletype,pattern)
 	if not pattern then return Cf(Ct("")*tabletype,rawset)
-	else                return Cf(Ct("")*pair("type",lpeg.Constant(tabletype))*pattern,rawset)
+	else            return Cf(Ct("")*pair("type", lpeg.Constant(tabletype) )*pattern,rawset)
 	end
 end
 
@@ -73,6 +73,7 @@ function parseOperator( table )
 	return switch(table.type){
 		value = function ()
 			if table.valpattype == "string" then
+
 				return pair(table.name,C(string))
 
 			elseif table.valpattype == "lpegPattern" then
